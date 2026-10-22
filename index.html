@@ -1875,11 +1875,13 @@ html&gt;body{padding:0}&lt;/style&gt;
   });
   const clock = value =&gt; timeFormat.format(value);
   const format = ms =&gt; {
-    const seconds = Math.max(0,Math.ceil(ms/1000));
+    const negative = ms&lt;0;
+    const seconds = negative ? Math.floor(-ms/1000) : Math.ceil(ms/1000);
     const hours = Math.floor(seconds/3600);
     const mm = String(Math.floor(seconds/60)%60).padStart(2,&#x27;0&#x27;);
     const ss = String(seconds%60).padStart(2,&#x27;0&#x27;);
-    return hours ? String(hours).padStart(2,&#x27;0&#x27;) + &#x27;:&#x27; + mm + &#x27;:&#x27; + ss : mm + &#x27;:&#x27; + ss;
+    const value = hours ? String(hours).padStart(2,&#x27;0&#x27;) + &#x27;:&#x27; + mm + &#x27;:&#x27; + ss : mm + &#x27;:&#x27; + ss;
+    return (negative &amp;&amp; seconds&gt;0 ? &#x27;-&#x27; : &#x27;&#x27;) + value;
   };
   const status = message =&gt; { get(&#x27;status&#x27;).textContent = message; };
   const pendingTasks = model =&gt; model.tasks.filter(task=&gt;task.doneAt === null);
@@ -2060,7 +2062,7 @@ html&gt;body{padding:0}&lt;/style&gt;
     const count = state.tasks.length;
     const complete = count-pending.length;
     const allDone = count&gt;0 &amp;&amp; !pending.length;
-    const remaining = started ? Math.max(0,state.deadline-now) : state.configuredMs;
+    const remaining = started ? state.deadline-now : state.configuredMs;
     const available = started ? Math.max(0,state.deadline-state.planAnchor) : state.configuredMs;
     const slot = pending.length ? available/pending.length : 0;
     const first = pending[0];
@@ -2088,10 +2090,10 @@ html&gt;body{padding:0}&lt;/style&gt;
       get(&#x27;stage-label&#x27;).textContent = &#x27;Todas concluídas&#x27;; get(&#x27;stage&#x27;).textContent = &#x27;✓&#x27;;
       get(&#x27;active-name&#x27;).textContent = &#x27;Você pode adicionar novas tarefas&#x27;;
       phase = &#x27;complete&#x27;; message = &#x27;Lista concluída. O tempo e a lista continuam editáveis.&#x27;;
-    } else if (started &amp;&amp; !remaining) {
-      get(&#x27;stage-label&#x27;).textContent = &#x27;Tempo encerrado&#x27;; get(&#x27;stage&#x27;).textContent = &#x27;00:00&#x27;;
+    } else if (started &amp;&amp; remaining&lt;=0) {
+      get(&#x27;stage-label&#x27;).textContent = &#x27;Tempo previsto encerrado&#x27;; get(&#x27;stage&#x27;).textContent = &#x27;00:00&#x27;;
       get(&#x27;active-name&#x27;).textContent = pending.length+(pending.length===1?&#x27; tarefa pendente&#x27;:&#x27; tarefas pendentes&#x27;);
-      phase = &#x27;expired&#x27;; message = &#x27;Aplique um novo tempo para continuar.&#x27;;
+      phase = &#x27;expired&#x27;; message = &#x27;O total continua contando até você parar.&#x27;;
     } else {
       const stageRemaining = started ? firstEnd-now : slot;
       get(&#x27;stage-label&#x27;).textContent = stageRemaining&lt;0?&#x27;Atraso na tarefa atual&#x27;:&#x27;Tempo para a tarefa atual&#x27;;
@@ -2111,7 +2113,7 @@ html&gt;body{padding:0}&lt;/style&gt;
       row.classList.toggle(&#x27;current&#x27;,!!first &amp;&amp; first.id===id);
       if (done) { meta.textContent = &#x27;Concluída às &#x27;+clock(task.doneAt); amount.textContent = &#x27;Feito&#x27;; }
       else if (!started) { meta.textContent = &#x27;Bloco &#x27;+(plans.get(id).index+1); amount.textContent = format(slot)+&#x27; previstos&#x27;; }
-      else if (!remaining) { meta.textContent = &#x27;Pendente · tempo encerrado&#x27;; amount.textContent = &#x27;00:00&#x27;; }
+      else if (remaining&lt;=0) { meta.textContent = &#x27;Pendente · tempo previsto encerrado&#x27;; amount.textContent = &#x27;00:00&#x27;; }
       else { const plan = plans.get(id); meta.textContent = (first.id===id?&#x27;Atual · &#x27;:&#x27;&#x27;)+clock(plan.start)+&#x27; → &#x27;+clock(plan.end); amount.textContent = format(slot)+&#x27; reservados&#x27;; }
     });
   }

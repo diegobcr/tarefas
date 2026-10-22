@@ -1806,6 +1806,7 @@ html&gt;body{padding:0}&lt;/style&gt;
       &lt;div class=&quot;ce-number-field&quot;&gt;&lt;input id=&quot;ce-minutes&quot; class=&quot;form-control&quot; type=&quot;number&quot; min=&quot;0.1&quot; max=&quot;1440&quot; step=&quot;any&quot; value=&quot;20&quot; inputmode=&quot;decimal&quot; aria-describedby=&quot;ce-time-help ce-time-error&quot;&gt;&lt;/div&gt;
       &lt;button type=&quot;button&quot; class=&quot;btn&quot; data-ce=&quot;apply-time&quot;&gt;Aplicar tempo&lt;/button&gt;
       &lt;span data-ce=&quot;start-wrap&quot;&gt;&lt;button type=&quot;button&quot; class=&quot;btn btn-primary&quot; data-ce=&quot;start&quot;&gt;Iniciar&lt;/button&gt;&lt;/span&gt;
+      &lt;span data-ce=&quot;stop-wrap&quot; hidden&gt;&lt;button type=&quot;button&quot; class=&quot;btn&quot; data-ce=&quot;stop&quot; data-tooltip=&quot;Para a contagem e restaura o tempo configurado, mantendo as tarefas&quot;&gt;Parar e zerar&lt;/button&gt;&lt;/span&gt;
     &lt;/div&gt;
     &lt;div class=&quot;text-small text-muted ce-help&quot; id=&quot;ce-time-help&quot;&gt;Durante a contagem, aplicar tempo define os minutos restantes a partir de agora.&lt;/div&gt;
     &lt;div class=&quot;text-destructive&quot; id=&quot;ce-time-error&quot; role=&quot;alert&quot;&gt;&lt;/div&gt;
@@ -2069,6 +2070,8 @@ html&gt;body{padding:0}&lt;/style&gt;
     get(&#x27;minutes-label&#x27;).textContent = started ? &#x27;Definir tempo restante (minutos)&#x27; : &#x27;Tempo disponível (minutos)&#x27;;
     get(&#x27;start-wrap&#x27;).hidden = started;
     get(&#x27;start&#x27;).disabled = !textDirty &amp;&amp; !pending.length;
+    get(&#x27;stop-wrap&#x27;).hidden = !started;
+    get(&#x27;stop&#x27;).disabled = !started;
     get(&#x27;count&#x27;).textContent = count ? complete+&#x27; de &#x27;+count+&#x27; concluídas&#x27; : &#x27;Nenhuma tarefa&#x27;;
     get(&#x27;now&#x27;).textContent = &#x27;Agora &#x27;+clock(now);
     const percent = count ? Math.round(complete/count*100) : 0;
@@ -2129,6 +2132,13 @@ html&gt;body{padding:0}&lt;/style&gt;
     if (!edited.tasks.some(task=&gt;task.doneAt===null)) {textError.textContent = &#x27;Insira pelo menos uma tarefa pendente.&#x27;; return;}
     const now = Date.now();
     commit({...state,...edited,configuredMs:duration,startedAt:now,deadline:now+duration,planAnchor:now},{syncText:true,syncTime:true});
+  });
+  get(&#x27;stop&#x27;).addEventListener(&#x27;click&#x27;,()=&gt;{
+    if (state.startedAt === null) return;
+    if (commit({...state,startedAt:null,deadline:null,planAnchor:null},{message:&#x27;Contagem parada. Clique em Iniciar para recomeçar.&#x27;})) {
+      if (!get(&#x27;start&#x27;).disabled) get(&#x27;start&#x27;).focus({preventScroll:true});
+      else minutes.focus({preventScroll:true});
+    }
   });
   get(&#x27;list&#x27;).addEventListener(&#x27;click&#x27;,event=&gt;{
     const button = event.target.closest(&#x27;button[data-direction]&#x27;);
